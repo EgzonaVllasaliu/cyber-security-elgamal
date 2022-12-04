@@ -1129,5 +1129,464 @@ namespace ElgamalEncryption.Algorithm.misc
             while (outRemainder.dataLength > 1 && outRemainder.data[outRemainder.dataLength - 1] == 0)
                 outRemainder.dataLength--;
         }
+
+
+        /// <summary>
+        /// Overloading of division operator
+        /// </summary>
+        /// <remarks>The dataLength of the divisor's absolute value must be less than maxLength</remarks>
+        /// <param name="bi1">Dividend</param>
+        /// <param name="bi2">Divisor</param>
+        /// <returns>Quotient of the division</returns>
+        public static BigInteger operator /(BigInteger bi1, BigInteger bi2)
+        {
+            BigInteger quotient = new BigInteger();
+            BigInteger remainder = new BigInteger();
+
+            int lastPos = maxLength - 1;
+            bool divisorNeg = false, dividendNeg = false;
+
+            if ((bi1.data[lastPos] & 0x80000000) != 0)     // bi1 negative
+            {
+                bi1 = -bi1;
+                dividendNeg = true;
+            }
+            if ((bi2.data[lastPos] & 0x80000000) != 0)     // bi2 negative
+            {
+                bi2 = -bi2;
+                divisorNeg = true;
+            }
+
+            if (bi1 < bi2)
+            {
+                return quotient;
+            }
+
+            else
+            {
+                if (bi2.dataLength == 1)
+                    singleByteDivide(bi1, bi2, quotient, remainder);
+                else
+                    multiByteDivide(bi1, bi2, quotient, remainder);
+
+                if (dividendNeg != divisorNeg)
+                    return -quotient;
+
+                return quotient;
+            }
+        }
+
+
+        /// <summary>
+        /// Overloading of modulus operator
+        /// </summary>
+        /// <remarks>The dataLength of the divisor's absolute value must be less than maxLength</remarks>
+        /// <param name="bi1">Dividend</param>
+        /// <param name="bi2">Divisor</param>
+        /// <returns>Remainder of the division</returns>
+        public static BigInteger operator %(BigInteger bi1, BigInteger bi2)
+        {
+            BigInteger quotient = new BigInteger();
+            BigInteger remainder = new BigInteger(bi1);
+
+            int lastPos = maxLength - 1;
+            bool dividendNeg = false;
+
+            if ((bi1.data[lastPos] & 0x80000000) != 0)     // bi1 negative
+            {
+                bi1 = -bi1;
+                dividendNeg = true;
+            }
+            if ((bi2.data[lastPos] & 0x80000000) != 0)     // bi2 negative
+                bi2 = -bi2;
+
+            if (bi1 < bi2)
+            {
+                return remainder;
+            }
+
+            else
+            {
+                if (bi2.dataLength == 1)
+                    singleByteDivide(bi1, bi2, quotient, remainder);
+                else
+                    multiByteDivide(bi1, bi2, quotient, remainder);
+
+                if (dividendNeg)
+                    return -remainder;
+
+                return remainder;
+            }
+        }
+
+
+        /// <summary>
+        /// Overloading of bitwise AND operator
+        /// </summary>
+        /// <param name="bi1">First BigInteger</param>
+        /// <param name="bi2">Second BigInteger</param>
+        /// <returns>BigInteger result after performing &amp; operation</returns>
+        public static BigInteger operator &(BigInteger bi1, BigInteger bi2)
+        {
+            BigInteger result = new BigInteger();
+
+            int len = bi1.dataLength > bi2.dataLength ? bi1.dataLength : bi2.dataLength;
+
+            for (int i = 0; i < len; i++)
+            {
+                uint sum = bi1.data[i] & bi2.data[i];
+                result.data[i] = sum;
+            }
+
+            result.dataLength = maxLength;
+
+            while (result.dataLength > 1 && result.data[result.dataLength - 1] == 0)
+                result.dataLength--;
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Overloading of bitwise OR operator
+        /// </summary>
+        /// <param name="bi1">First BigInteger</param>
+        /// <param name="bi2">Second BigInteger</param>
+        /// <returns>BigInteger result after performing | operation</returns>
+        public static BigInteger operator |(BigInteger bi1, BigInteger bi2)
+        {
+            BigInteger result = new BigInteger();
+
+            int len = bi1.dataLength > bi2.dataLength ? bi1.dataLength : bi2.dataLength;
+
+            for (int i = 0; i < len; i++)
+            {
+                uint sum = bi1.data[i] | bi2.data[i];
+                result.data[i] = sum;
+            }
+
+            result.dataLength = maxLength;
+
+            while (result.dataLength > 1 && result.data[result.dataLength - 1] == 0)
+                result.dataLength--;
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Overloading of bitwise XOR operator
+        /// </summary>
+        /// <param name="bi1">First BigInteger</param>
+        /// <param name="bi2">Second BigInteger</param>
+        /// <returns>BigInteger result after performing ^ operation</returns>
+        public static BigInteger operator ^(BigInteger bi1, BigInteger bi2)
+        {
+            BigInteger result = new BigInteger();
+
+            int len = bi1.dataLength > bi2.dataLength ? bi1.dataLength : bi2.dataLength;
+
+            for (int i = 0; i < len; i++)
+            {
+                uint sum = bi1.data[i] ^ bi2.data[i];
+                result.data[i] = sum;
+            }
+
+            result.dataLength = maxLength;
+
+            while (result.dataLength > 1 && result.data[result.dataLength - 1] == 0)
+                result.dataLength--;
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Compare this and a BigInteger and find the maximum one
+        /// </summary>
+        /// <param name="bi">BigInteger to be compared with this</param>
+        /// <returns>The bigger value of this and bi</returns>
+        public BigInteger max(BigInteger bi)
+        {
+            if (this > bi)
+                return new BigInteger(this);
+            else
+                return new BigInteger(bi);
+        }
+
+
+        /// <summary>
+        /// Compare this and a BigInteger and find the minimum one
+        /// </summary>
+        /// <param name="bi">BigInteger to be compared with this</param>
+        /// <returns>The smaller value of this and bi</returns>
+        public BigInteger min(BigInteger bi)
+        {
+            if (this < bi)
+                return new BigInteger(this);
+            else
+                return new BigInteger(bi);
+
+        }
+
+
+        /// <summary>
+        /// Returns the absolute value
+        /// </summary>
+        /// <returns>Absolute value of this</returns>
+        public BigInteger abs()
+        {
+            if ((data[maxLength - 1] & 0x80000000) != 0)
+                return -this;
+            else
+                return new BigInteger(this);
+        }
+
+
+        /// <summary>
+        /// Returns a string representing the BigInteger in base 10
+        /// </summary>
+        /// <returns>string representation of the BigInteger</returns>
+        public override string ToString()
+        {
+            return ToString(10);
+        }
+
+
+        /// <summary>
+        /// Returns a string representing the BigInteger in [sign][magnitude] format in the specified radix
+        /// </summary>
+        /// <example>If the value of BigInteger is -255 in base 10, then ToString(16) returns "-FF"</example>
+        /// <param name="radix">Base</param>
+        /// <returns>string representation of the BigInteger in [sign][magnitude] format</returns>
+        public string ToString(int radix)
+        {
+            if (radix < 2 || radix > 36)
+                throw new ArgumentException("Radix must be >= 2 and <= 36");
+
+            string charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            string result = "";
+
+            BigInteger a = this;
+
+            bool negative = false;
+            if ((a.data[maxLength - 1] & 0x80000000) != 0)
+            {
+                negative = true;
+                try
+                {
+                    a = -a;
+                }
+                catch (Exception) { }
+            }
+
+            BigInteger quotient = new BigInteger();
+            BigInteger remainder = new BigInteger();
+            BigInteger biRadix = new BigInteger(radix);
+
+            if (a.dataLength == 1 && a.data[0] == 0)
+                result = "0";
+            else
+            {
+                while (a.dataLength > 1 || a.dataLength == 1 && a.data[0] != 0)
+                {
+                    singleByteDivide(a, biRadix, quotient, remainder);
+
+                    if (remainder.data[0] < 10)
+                        result = remainder.data[0] + result;
+                    else
+                        result = charSet[(int)remainder.data[0] - 10] + result;
+
+                    a = quotient;
+                }
+                if (negative)
+                    result = "-" + result;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Returns a hex string showing the contains of the BigInteger
+        /// </summary>
+        /// <example>
+        /// 1) If the value of BigInteger is 255 in base 10, then ToHexString() returns "FF"
+        /// 2) If the value of BigInteger is -255 in base 10, thenToHexString() returns ".....FFFFFFFFFF01", which is the 2's complement representation of -255.
+        /// </example>
+        /// <returns></returns>
+        public string ToHexString()
+        {
+            string result = data[dataLength - 1].ToString("X");
+
+            for (int i = dataLength - 2; i >= 0; i--)
+            {
+                result += data[i].ToString("X8");
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Modulo Exponentiation
+        /// </summary>
+        /// <param name="exp">Exponential</param>
+        /// <param name="n">Modulo</param>
+        /// <returns>BigInteger result of raising this to the power of exp and then modulo n </returns>
+        public BigInteger modPow(BigInteger exp, BigInteger n)
+        {
+            if ((exp.data[maxLength - 1] & 0x80000000) != 0)
+                throw new ArithmeticException("Positive exponents only.");
+
+            BigInteger resultNum = 1;
+            BigInteger tempNum;
+            bool thisNegative = false;
+
+            if ((data[maxLength - 1] & 0x80000000) != 0)   // negative this
+            {
+                tempNum = -this % n;
+                thisNegative = true;
+            }
+            else
+                tempNum = this % n;  // ensures (tempNum * tempNum) < b^(2k)
+
+            if ((n.data[maxLength - 1] & 0x80000000) != 0)   // negative n
+                n = -n;
+
+            // calculate constant = b^(2k) / m
+            BigInteger constant = new BigInteger();
+
+            int i = n.dataLength << 1;
+            constant.data[i] = 0x00000001;
+            constant.dataLength = i + 1;
+
+            constant = constant / n;
+            int totalBits = exp.bitCount();
+            int count = 0;
+
+            // perform squaring and multiply exponentiation
+            for (int pos = 0; pos < exp.dataLength; pos++)
+            {
+                uint mask = 0x01;
+
+                for (int index = 0; index < 32; index++)
+                {
+                    if ((exp.data[pos] & mask) != 0)
+                        resultNum = BarrettReduction(resultNum * tempNum, n, constant);
+
+                    mask <<= 1;
+
+                    tempNum = BarrettReduction(tempNum * tempNum, n, constant);
+
+
+                    if (tempNum.dataLength == 1 && tempNum.data[0] == 1)
+                    {
+                        if (thisNegative && (exp.data[0] & 0x1) != 0)    //odd exp
+                            return -resultNum;
+                        return resultNum;
+                    }
+                    count++;
+                    if (count == totalBits)
+                        break;
+                }
+            }
+
+            if (thisNegative && (exp.data[0] & 0x1) != 0)    //odd exp
+                return -resultNum;
+
+            return resultNum;
+        }
+
+
+        /// <summary>
+        /// Fast calculation of modular reduction using Barrett's reduction
+        /// </summary>
+        /// <remarks>
+        /// Requires x &lt; b^(2k), where b is the base.  In this case, base is 2^32 (uint).
+        ///
+        /// Reference [4]
+        /// </remarks>
+        /// <param name="x"></param>
+        /// <param name="n"></param>
+        /// <param name="constant"></param>
+        /// <returns></returns>
+        private BigInteger BarrettReduction(BigInteger x, BigInteger n, BigInteger constant)
+        {
+            int k = n.dataLength,
+                kPlusOne = k + 1,
+                kMinusOne = k - 1;
+
+            BigInteger q1 = new BigInteger();
+
+            // q1 = x / b^(k-1)
+            for (int i = kMinusOne, j = 0; i < x.dataLength; i++, j++)
+                q1.data[j] = x.data[i];
+            q1.dataLength = x.dataLength - kMinusOne;
+            if (q1.dataLength <= 0)
+                q1.dataLength = 1;
+
+
+            BigInteger q2 = q1 * constant;
+            BigInteger q3 = new BigInteger();
+
+            // q3 = q2 / b^(k+1)
+            for (int i = kPlusOne, j = 0; i < q2.dataLength; i++, j++)
+                q3.data[j] = q2.data[i];
+            q3.dataLength = q2.dataLength - kPlusOne;
+            if (q3.dataLength <= 0)
+                q3.dataLength = 1;
+
+
+            // r1 = x mod b^(k+1)
+            // i.e. keep the lowest (k+1) words
+            BigInteger r1 = new BigInteger();
+            int lengthToCopy = x.dataLength > kPlusOne ? kPlusOne : x.dataLength;
+            for (int i = 0; i < lengthToCopy; i++)
+                r1.data[i] = x.data[i];
+            r1.dataLength = lengthToCopy;
+
+
+            // r2 = (q3 * n) mod b^(k+1)
+            // partial multiplication of q3 and n
+
+            BigInteger r2 = new BigInteger();
+            for (int i = 0; i < q3.dataLength; i++)
+            {
+                if (q3.data[i] == 0) continue;
+
+                ulong mcarry = 0;
+                int t = i;
+                for (int j = 0; j < n.dataLength && t < kPlusOne; j++, t++)
+                {
+                    // t = i + j
+                    ulong val = q3.data[i] * (ulong)n.data[j] +
+                                 r2.data[t] + mcarry;
+
+                    r2.data[t] = (uint)(val & 0xFFFFFFFF);
+                    mcarry = val >> 32;
+                }
+
+                if (t < kPlusOne)
+                    r2.data[t] = (uint)mcarry;
+            }
+            r2.dataLength = kPlusOne;
+            while (r2.dataLength > 1 && r2.data[r2.dataLength - 1] == 0)
+                r2.dataLength--;
+
+            r1 -= r2;
+            if ((r1.data[maxLength - 1] & 0x80000000) != 0)        // negative
+            {
+                BigInteger val = new BigInteger();
+                val.data[kPlusOne] = 0x00000001;
+                val.dataLength = kPlusOne + 1;
+                r1 += val;
+            }
+
+            while (r1 >= n)
+                r1 -= n;
+
+            return r1;
+        }
     }
 }
