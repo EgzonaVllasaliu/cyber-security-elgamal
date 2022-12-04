@@ -1,0 +1,195 @@
+using System.Security.Cryptography;
+using System.Text;
+
+namespace ElgamalExtension
+{
+    public partial class Main : Form
+    {
+        public Main()
+        {
+            InitializeComponent();
+        }
+
+        private bool showMore = false;
+
+        private void ResizeWindow(bool showMore)
+        {
+            // this will resize the window based on the users preference
+            if (showMore)
+            {
+                this.Height = pnlAutomatic.Height + pnlAutomatic.Location.Y + 30;
+                btnInfo.Text = "Show Less";
+            }
+            else
+            {
+                this.Height = pnlOutput.Height + pnlAutomatic.Location.Y + 50;
+                btnInfo.Text = "Show More";
+            }
+        }
+
+        private void BtnSign_Click(object sender, EventArgs e)
+        {
+            // hash digest for the input
+            MD5 md5 = MD5.Create();
+            byte[] inputBytes = Encoding.Default.GetBytes(txtInput.Text);
+            byte[] x_plaintext = md5.ComputeHash(inputBytes);
+            txtMessageDigest.Text = BitConverter.ToString(x_plaintext).Replace("-", " ");
+
+            // create a signature for the plaintext
+            var x_sign_alg = new ElGamalManaged
+            {
+                KeySize = 384
+            };
+
+            ((ElGamalManaged)x_sign_alg).CreateKeyPair(x_sign_alg.KeySize);
+
+            byte[] x_signature = x_sign_alg.Sign(x_plaintext);
+
+            // this will output the signature in a HEX format which is better for the eye
+            txtOutput.Text = BitConverter.ToString(x_signature).Replace("-", " ");
+
+            // if Sign is clicked show the "Show Less" button
+            btnInfo.Visible = true;
+            showMore = true;
+            ResizeWindow(showMore);
+
+            //output the keys in the respective fields
+            ElGamalManaged signed = (ElGamalManaged)x_sign_alg;
+            txtPublicP.Text = signed.ExportParameters().P.ToString();
+            txtPublicG.Text = signed.ExportParameters().G.ToString();
+            txtPublicY.Text = signed.ExportParameters().Y.ToString();
+            txtPrivateKey.Text = signed.ExportParameters().X.ToString();
+
+        }
+
+        private void BtnMSign_Click(object sender, EventArgs e)
+        {
+            if (txtPublicMP.Text == string.Empty || txtMPrivateKey.Text == string.Empty
+                || txtPublicMY.Text == string.Empty || txtPublicMG.Text == string.Empty)
+            {
+                return;
+            }
+
+            // hash digest for the input
+            var md5 = MD5.Create();
+            byte[] inputBytes = Encoding.Default.GetBytes(txtMMessage.Text);
+            byte[] x_plaintext = md5.ComputeHash(inputBytes);
+            txtMMessageHash.Text = BitConverter.ToString(x_plaintext).Replace("-", " ");
+
+            // create an instance of the algorithm and generate some keys
+            var keys = new ElGamalKeyStruct();
+            try
+            {
+                keys.P = new BigInteger(txtPublicMP.Text, 10);
+                keys.X = new BigInteger(txtMPrivateKey.Text, 10);
+                keys.Y = new BigInteger(txtPublicMY.Text, 10);
+                keys.G = new BigInteger(txtPublicMG.Text, 10);
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+
+            // create a signature for the plaintext
+            ElGamal x_sign_alg = new ElGamalManaged();
+            // set the keys - note that we export with the
+            // private parameters since we are signing data
+
+            x_sign_alg.ImportParameters(keys);
+            byte[] x_signature = x_sign_alg.Sign(x_plaintext);
+
+            txtMSignature.Text = BitConverter.ToString(x_signature).Replace("-", " ");
+        }
+
+        private void BtnInfo_Click(object sender, EventArgs e)
+        {
+            ResizeWindow(btnInfo.Text == "Show More");
+        }
+
+        private void BtnPrivateKey_Click(object sender, EventArgs e)
+        {
+            // simpe condition to hide or show the private key
+            if (txtPrivateKey.UseSystemPasswordChar)
+            {
+                txtPrivateKey.UseSystemPasswordChar = false;
+                btnPrivateKey.Text = "Hide";
+            }
+            else
+            {
+                txtPrivateKey.UseSystemPasswordChar = true;
+                btnPrivateKey.Text = "Show";
+            }
+        }
+
+        // check what mode we are using
+        private void RbAuto_CheckedChanged(object sender, EventArgs e)
+        {
+            pnlAutomatic.Visible = rbAuto.Checked;
+
+            pnlManual.Visible = rbManual.Checked;
+            ResizeWindow(rbManual.Checked);
+        }
+
+        // this part handles all the copy buttons
+        private void BtnMHashCopy_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(txtMMessageHash.Text);
+
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+
+        private void BtnMSignatureCopy_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(txtMSignature.Text);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+
+        private void BtnPublicP_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(txtPublicP.Text);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+
+        private void BtnSignature_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(txtOutput.Text);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+
+        private void BtnCopy_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(txtMessageDigest.Text);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+    }
+}
