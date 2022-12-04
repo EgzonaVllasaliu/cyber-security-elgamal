@@ -1827,8 +1827,6 @@ namespace ElgamalEncryption.Algorithm.misc
             return true;
         }
 
-    }
-
 
         /// <summary>
         /// Probabilistic prime test based on Rabin-Miller's
@@ -2913,4 +2911,5 @@ namespace ElgamalEncryption.Algorithm.misc
 
             return result;
         }
+    }
 }

@@ -1,3 +1,5 @@
+using ElgamalEncryption.Algorithm;
+using ElgamalEncryption.Algorithm.misc;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -85,7 +87,7 @@ namespace ElgamalExtension
                 keys.Y = new BigInteger(txtPublicMY.Text, 10);
                 keys.G = new BigInteger(txtPublicMG.Text, 10);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return;
             }

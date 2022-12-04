@@ -28,7 +28,16 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.pnlAutomatic = new System.Windows.Forms.Panel();
+            this.txtInput = new System.Windows.Forms.TextBox();
+            this.txtOutput = new System.Windows.Forms.TextBox();
+            this.lblMessage = new System.Windows.Forms.Label();
+            this.btnSign = new System.Windows.Forms.Button();
+            this.lblSignature = new System.Windows.Forms.Label();
+            this.lblDigest = new System.Windows.Forms.Label();
+            this.txtMessageDigest = new System.Windows.Forms.TextBox();
+            this.btnCopy = new System.Windows.Forms.Button();
+            this.pnlOutput = new System.Windows.Forms.Panel();
+            this.btnInfo = new System.Windows.Forms.Button();
             this.pnlInput = new System.Windows.Forms.Panel();
             this.lblY = new System.Windows.Forms.Label();
             this.lblPrime = new System.Windows.Forms.Label();
@@ -40,17 +49,11 @@
             this.btnPrivateKey = new System.Windows.Forms.Button();
             this.txtPublicP = new System.Windows.Forms.TextBox();
             this.btnPublicP = new System.Windows.Forms.Button();
-            this.lblDigest = new System.Windows.Forms.Label();
-            this.txtOutput = new System.Windows.Forms.TextBox();
-            this.lblSignature = new System.Windows.Forms.Label();
-            this.txtMessageDigest = new System.Windows.Forms.TextBox();
             this.btnSignature = new System.Windows.Forms.Button();
-            this.btnCopy = new System.Windows.Forms.Button();
-            this.pnlOutput = new System.Windows.Forms.Panel();
-            this.btnInfo = new System.Windows.Forms.Button();
-            this.txtInput = new System.Windows.Forms.TextBox();
-            this.lblMessage = new System.Windows.Forms.Label();
-            this.btnSign = new System.Windows.Forms.Button();
+            this.lblType = new System.Windows.Forms.Label();
+            this.rbAuto = new System.Windows.Forms.RadioButton();
+            this.rbManual = new System.Windows.Forms.RadioButton();
+            this.pnlAutomatic = new System.Windows.Forms.Panel();
             this.pnlManual = new System.Windows.Forms.Panel();
             this.lblMY = new System.Windows.Forms.Label();
             this.lblMG = new System.Windows.Forms.Label();
@@ -69,24 +72,117 @@
             this.txtMMessageHash = new System.Windows.Forms.TextBox();
             this.lblMSignature = new System.Windows.Forms.Label();
             this.btnMHashCopy = new System.Windows.Forms.Button();
-            this.rbManual = new System.Windows.Forms.RadioButton();
-            this.rbAuto = new System.Windows.Forms.RadioButton();
-            this.lblType = new System.Windows.Forms.Label();
-            this.pnlAutomatic.SuspendLayout();
-            this.pnlInput.SuspendLayout();
             this.pnlOutput.SuspendLayout();
+            this.pnlInput.SuspendLayout();
+            this.pnlAutomatic.SuspendLayout();
             this.pnlManual.SuspendLayout();
             this.SuspendLayout();
             // 
-            // pnlAutomatic
+            // txtInput
             // 
-            this.pnlAutomatic.Controls.Add(this.pnlInput);
-            this.pnlAutomatic.Controls.Add(this.pnlOutput);
-            this.pnlAutomatic.Location = new System.Drawing.Point(6, 75);
-            this.pnlAutomatic.Margin = new System.Windows.Forms.Padding(4);
-            this.pnlAutomatic.Name = "pnlAutomatic";
-            this.pnlAutomatic.Size = new System.Drawing.Size(810, 706);
-            this.pnlAutomatic.TabIndex = 14;
+            this.txtInput.Location = new System.Drawing.Point(4, 30);
+            this.txtInput.Margin = new System.Windows.Forms.Padding(4);
+            this.txtInput.Multiline = true;
+            this.txtInput.Name = "txtInput";
+            this.txtInput.Size = new System.Drawing.Size(783, 137);
+            this.txtInput.TabIndex = 0;
+            // 
+            // txtOutput
+            // 
+            this.txtOutput.BackColor = System.Drawing.Color.LightGray;
+            this.txtOutput.Location = new System.Drawing.Point(4, 91);
+            this.txtOutput.Margin = new System.Windows.Forms.Padding(4);
+            this.txtOutput.Multiline = true;
+            this.txtOutput.Name = "txtOutput";
+            this.txtOutput.ReadOnly = true;
+            this.txtOutput.Size = new System.Drawing.Size(664, 128);
+            this.txtOutput.TabIndex = 0;
+            // 
+            // lblMessage
+            // 
+            this.lblMessage.AutoSize = true;
+            this.lblMessage.Location = new System.Drawing.Point(1, 2);
+            this.lblMessage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblMessage.Name = "lblMessage";
+            this.lblMessage.Size = new System.Drawing.Size(82, 25);
+            this.lblMessage.TabIndex = 1;
+            this.lblMessage.Text = "Message";
+            // 
+            // btnSign
+            // 
+            this.btnSign.Location = new System.Drawing.Point(575, 178);
+            this.btnSign.Margin = new System.Windows.Forms.Padding(4);
+            this.btnSign.Name = "btnSign";
+            this.btnSign.Size = new System.Drawing.Size(212, 61);
+            this.btnSign.TabIndex = 2;
+            this.btnSign.Text = "Sign";
+            this.btnSign.UseVisualStyleBackColor = true;
+            this.btnSign.Click += new System.EventHandler(this.BtnSign_Click);
+            // 
+            // lblSignature
+            // 
+            this.lblSignature.AutoSize = true;
+            this.lblSignature.Location = new System.Drawing.Point(4, 64);
+            this.lblSignature.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSignature.Name = "lblSignature";
+            this.lblSignature.Size = new System.Drawing.Size(143, 25);
+            this.lblSignature.TabIndex = 1;
+            this.lblSignature.Text = "Digital Signature";
+            // 
+            // lblDigest
+            // 
+            this.lblDigest.AutoSize = true;
+            this.lblDigest.Location = new System.Drawing.Point(4, 0);
+            this.lblDigest.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblDigest.Name = "lblDigest";
+            this.lblDigest.Size = new System.Drawing.Size(138, 25);
+            this.lblDigest.TabIndex = 4;
+            this.lblDigest.Text = "Message Digest";
+            // 
+            // txtMessageDigest
+            // 
+            this.txtMessageDigest.BackColor = System.Drawing.Color.LightGray;
+            this.txtMessageDigest.Location = new System.Drawing.Point(6, 28);
+            this.txtMessageDigest.Margin = new System.Windows.Forms.Padding(4);
+            this.txtMessageDigest.Name = "txtMessageDigest";
+            this.txtMessageDigest.ReadOnly = true;
+            this.txtMessageDigest.Size = new System.Drawing.Size(662, 31);
+            this.txtMessageDigest.TabIndex = 3;
+            // 
+            // btnCopy
+            // 
+            this.btnCopy.Location = new System.Drawing.Point(674, 24);
+            this.btnCopy.Margin = new System.Windows.Forms.Padding(4);
+            this.btnCopy.Name = "btnCopy";
+            this.btnCopy.Size = new System.Drawing.Size(120, 40);
+            this.btnCopy.TabIndex = 2;
+            this.btnCopy.Text = "Copy";
+            this.btnCopy.UseVisualStyleBackColor = true;
+            this.btnCopy.Click += new System.EventHandler(this.BtnCopy_Click);
+            // 
+            // pnlOutput
+            // 
+            this.pnlOutput.Controls.Add(this.btnInfo);
+            this.pnlOutput.Controls.Add(this.txtInput);
+            this.pnlOutput.Controls.Add(this.lblMessage);
+            this.pnlOutput.Controls.Add(this.btnSign);
+            this.pnlOutput.Location = new System.Drawing.Point(0, 0);
+            this.pnlOutput.Margin = new System.Windows.Forms.Padding(4);
+            this.pnlOutput.Name = "pnlOutput";
+            this.pnlOutput.Size = new System.Drawing.Size(804, 245);
+            this.pnlOutput.TabIndex = 5;
+            // 
+            // btnInfo
+            // 
+            this.btnInfo.Location = new System.Drawing.Point(10, 201);
+            this.btnInfo.Margin = new System.Windows.Forms.Padding(4);
+            this.btnInfo.Name = "btnInfo";
+            this.btnInfo.Size = new System.Drawing.Size(208, 35);
+            this.btnInfo.TabIndex = 3;
+            this.btnInfo.Text = "Show Less";
+            this.btnInfo.UseVisualStyleBackColor = true;
+            this.btnInfo.Visible = false;
+            this.btnInfo.Click += new System.EventHandler(this.BtnInfo_Click);
             // 
             // pnlInput
             // 
@@ -195,6 +291,7 @@
             this.btnPrivateKey.TabIndex = 5;
             this.btnPrivateKey.Text = "Show";
             this.btnPrivateKey.UseVisualStyleBackColor = true;
+            this.btnPrivateKey.Click += new System.EventHandler(this.BtnPrivateKey_Click);
             // 
             // txtPublicP
             // 
@@ -215,47 +312,7 @@
             this.btnPublicP.TabIndex = 5;
             this.btnPublicP.Text = "Copy";
             this.btnPublicP.UseVisualStyleBackColor = true;
-            // 
-            // lblDigest
-            // 
-            this.lblDigest.AutoSize = true;
-            this.lblDigest.Location = new System.Drawing.Point(4, 0);
-            this.lblDigest.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblDigest.Name = "lblDigest";
-            this.lblDigest.Size = new System.Drawing.Size(138, 25);
-            this.lblDigest.TabIndex = 4;
-            this.lblDigest.Text = "Message Digest";
-            // 
-            // txtOutput
-            // 
-            this.txtOutput.BackColor = System.Drawing.Color.LightGray;
-            this.txtOutput.Location = new System.Drawing.Point(4, 91);
-            this.txtOutput.Margin = new System.Windows.Forms.Padding(4);
-            this.txtOutput.Multiline = true;
-            this.txtOutput.Name = "txtOutput";
-            this.txtOutput.ReadOnly = true;
-            this.txtOutput.Size = new System.Drawing.Size(664, 128);
-            this.txtOutput.TabIndex = 0;
-            // 
-            // lblSignature
-            // 
-            this.lblSignature.AutoSize = true;
-            this.lblSignature.Location = new System.Drawing.Point(4, 64);
-            this.lblSignature.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblSignature.Name = "lblSignature";
-            this.lblSignature.Size = new System.Drawing.Size(143, 25);
-            this.lblSignature.TabIndex = 1;
-            this.lblSignature.Text = "Digital Signature";
-            // 
-            // txtMessageDigest
-            // 
-            this.txtMessageDigest.BackColor = System.Drawing.Color.LightGray;
-            this.txtMessageDigest.Location = new System.Drawing.Point(6, 28);
-            this.txtMessageDigest.Margin = new System.Windows.Forms.Padding(4);
-            this.txtMessageDigest.Name = "txtMessageDigest";
-            this.txtMessageDigest.ReadOnly = true;
-            this.txtMessageDigest.Size = new System.Drawing.Size(662, 31);
-            this.txtMessageDigest.TabIndex = 3;
+            this.btnPublicP.Click += new System.EventHandler(this.BtnPublicP_Click);
             // 
             // btnSignature
             // 
@@ -266,68 +323,52 @@
             this.btnSignature.TabIndex = 2;
             this.btnSignature.Text = "Copy";
             this.btnSignature.UseVisualStyleBackColor = true;
+            this.btnSignature.Click += new System.EventHandler(this.BtnSignature_Click);
             // 
-            // btnCopy
+            // lblType
             // 
-            this.btnCopy.Location = new System.Drawing.Point(674, 24);
-            this.btnCopy.Margin = new System.Windows.Forms.Padding(4);
-            this.btnCopy.Name = "btnCopy";
-            this.btnCopy.Size = new System.Drawing.Size(120, 40);
-            this.btnCopy.TabIndex = 2;
-            this.btnCopy.Text = "Copy";
-            this.btnCopy.UseVisualStyleBackColor = true;
+            this.lblType.AutoSize = true;
+            this.lblType.Location = new System.Drawing.Point(18, 11);
+            this.lblType.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblType.Name = "lblType";
+            this.lblType.Size = new System.Drawing.Size(59, 25);
+            this.lblType.TabIndex = 1;
+            this.lblType.Text = "Mode";
             // 
-            // pnlOutput
+            // rbAuto
             // 
-            this.pnlOutput.Controls.Add(this.btnInfo);
-            this.pnlOutput.Controls.Add(this.txtInput);
-            this.pnlOutput.Controls.Add(this.lblMessage);
-            this.pnlOutput.Controls.Add(this.btnSign);
-            this.pnlOutput.Location = new System.Drawing.Point(0, 0);
-            this.pnlOutput.Margin = new System.Windows.Forms.Padding(4);
-            this.pnlOutput.Name = "pnlOutput";
-            this.pnlOutput.Size = new System.Drawing.Size(804, 245);
-            this.pnlOutput.TabIndex = 5;
+            this.rbAuto.AutoSize = true;
+            this.rbAuto.Checked = true;
+            this.rbAuto.Location = new System.Drawing.Point(22, 38);
+            this.rbAuto.Margin = new System.Windows.Forms.Padding(4);
+            this.rbAuto.Name = "rbAuto";
+            this.rbAuto.Size = new System.Drawing.Size(119, 29);
+            this.rbAuto.TabIndex = 7;
+            this.rbAuto.TabStop = true;
+            this.rbAuto.Text = "Automatic";
+            this.rbAuto.UseVisualStyleBackColor = true;
+            this.rbAuto.CheckedChanged += new System.EventHandler(this.RbAuto_CheckedChanged);
             // 
-            // btnInfo
+            // rbManual
             // 
-            this.btnInfo.Location = new System.Drawing.Point(10, 201);
-            this.btnInfo.Margin = new System.Windows.Forms.Padding(4);
-            this.btnInfo.Name = "btnInfo";
-            this.btnInfo.Size = new System.Drawing.Size(208, 35);
-            this.btnInfo.TabIndex = 3;
-            this.btnInfo.Text = "Show Less";
-            this.btnInfo.UseVisualStyleBackColor = true;
-            this.btnInfo.Visible = false;
+            this.rbManual.AutoSize = true;
+            this.rbManual.Location = new System.Drawing.Point(169, 38);
+            this.rbManual.Margin = new System.Windows.Forms.Padding(4);
+            this.rbManual.Name = "rbManual";
+            this.rbManual.Size = new System.Drawing.Size(95, 29);
+            this.rbManual.TabIndex = 8;
+            this.rbManual.Text = "Manual";
+            this.rbManual.UseVisualStyleBackColor = true;
             // 
-            // txtInput
+            // pnlAutomatic
             // 
-            this.txtInput.Location = new System.Drawing.Point(4, 30);
-            this.txtInput.Margin = new System.Windows.Forms.Padding(4);
-            this.txtInput.Multiline = true;
-            this.txtInput.Name = "txtInput";
-            this.txtInput.Size = new System.Drawing.Size(783, 137);
-            this.txtInput.TabIndex = 0;
-            // 
-            // lblMessage
-            // 
-            this.lblMessage.AutoSize = true;
-            this.lblMessage.Location = new System.Drawing.Point(1, 2);
-            this.lblMessage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblMessage.Name = "lblMessage";
-            this.lblMessage.Size = new System.Drawing.Size(82, 25);
-            this.lblMessage.TabIndex = 1;
-            this.lblMessage.Text = "Message";
-            // 
-            // btnSign
-            // 
-            this.btnSign.Location = new System.Drawing.Point(575, 178);
-            this.btnSign.Margin = new System.Windows.Forms.Padding(4);
-            this.btnSign.Name = "btnSign";
-            this.btnSign.Size = new System.Drawing.Size(212, 61);
-            this.btnSign.TabIndex = 2;
-            this.btnSign.Text = "Sign";
-            this.btnSign.UseVisualStyleBackColor = true;
+            this.pnlAutomatic.Controls.Add(this.pnlInput);
+            this.pnlAutomatic.Controls.Add(this.pnlOutput);
+            this.pnlAutomatic.Location = new System.Drawing.Point(12, 74);
+            this.pnlAutomatic.Margin = new System.Windows.Forms.Padding(4);
+            this.pnlAutomatic.Name = "pnlAutomatic";
+            this.pnlAutomatic.Size = new System.Drawing.Size(810, 706);
+            this.pnlAutomatic.TabIndex = 9;
             // 
             // pnlManual
             // 
@@ -348,11 +389,11 @@
             this.pnlManual.Controls.Add(this.txtMMessageHash);
             this.pnlManual.Controls.Add(this.lblMSignature);
             this.pnlManual.Controls.Add(this.btnMHashCopy);
-            this.pnlManual.Location = new System.Drawing.Point(6, 75);
+            this.pnlManual.Location = new System.Drawing.Point(12, 74);
             this.pnlManual.Margin = new System.Windows.Forms.Padding(4);
             this.pnlManual.Name = "pnlManual";
             this.pnlManual.Size = new System.Drawing.Size(810, 706);
-            this.pnlManual.TabIndex = 15;
+            this.pnlManual.TabIndex = 10;
             this.pnlManual.Visible = false;
             // 
             // lblMY
@@ -413,6 +454,7 @@
             this.btnMSign.TabIndex = 2;
             this.btnMSign.Text = "Sign";
             this.btnMSign.UseVisualStyleBackColor = true;
+            this.btnMSign.Click += new System.EventHandler(this.BtnMSign_Click);
             // 
             // txtPublicMY
             // 
@@ -493,6 +535,7 @@
             this.btnMSignatureCopy.TabIndex = 2;
             this.btnMSignatureCopy.Text = "Copy";
             this.btnMSignatureCopy.UseVisualStyleBackColor = true;
+            this.btnMSignatureCopy.Click += new System.EventHandler(this.BtnMSignatureCopy_Click);
             // 
             // txtMMessageHash
             // 
@@ -523,58 +566,31 @@
             this.btnMHashCopy.TabIndex = 2;
             this.btnMHashCopy.Text = "Copy";
             this.btnMHashCopy.UseVisualStyleBackColor = true;
+            this.btnMHashCopy.Click += new System.EventHandler(this.BtnMHashCopy_Click);
             // 
-            // rbManual
+            // Main
             // 
-            this.rbManual.AutoSize = true;
-            this.rbManual.Location = new System.Drawing.Point(163, 39);
-            this.rbManual.Margin = new System.Windows.Forms.Padding(4);
-            this.rbManual.Name = "rbManual";
-            this.rbManual.Size = new System.Drawing.Size(95, 29);
-            this.rbManual.TabIndex = 13;
-            this.rbManual.Text = "Manual";
-            this.rbManual.UseVisualStyleBackColor = true;
-            // 
-            // rbAuto
-            // 
-            this.rbAuto.AutoSize = true;
-            this.rbAuto.Checked = true;
-            this.rbAuto.Location = new System.Drawing.Point(16, 39);
-            this.rbAuto.Margin = new System.Windows.Forms.Padding(4);
-            this.rbAuto.Name = "rbAuto";
-            this.rbAuto.Size = new System.Drawing.Size(119, 29);
-            this.rbAuto.TabIndex = 12;
-            this.rbAuto.TabStop = true;
-            this.rbAuto.Text = "Automatic";
-            this.rbAuto.UseVisualStyleBackColor = true;
-            // 
-            // lblType
-            // 
-            this.lblType.AutoSize = true;
-            this.lblType.Location = new System.Drawing.Point(12, 12);
-            this.lblType.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblType.Name = "lblType";
-            this.lblType.Size = new System.Drawing.Size(59, 25);
-            this.lblType.TabIndex = 11;
-            this.lblType.Text = "Mode";
-            // 
-            // ElgamalForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(820, 321);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(144F, 144F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.BackColor = System.Drawing.SystemColors.Control;
+            this.ClientSize = new System.Drawing.Size(823, 319);
             this.Controls.Add(this.pnlAutomatic);
             this.Controls.Add(this.pnlManual);
             this.Controls.Add(this.rbManual);
             this.Controls.Add(this.rbAuto);
             this.Controls.Add(this.lblType);
-            this.Name = "ElgamalForm";
-            this.Text = "Elgamal";
-            this.pnlAutomatic.ResumeLayout(false);
-            this.pnlInput.ResumeLayout(false);
-            this.pnlInput.PerformLayout();
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Margin = new System.Windows.Forms.Padding(4);
+            this.MaximizeBox = false;
+            this.Name = "Main";
+            this.ShowIcon = false;
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.Text = "Elgamal Extension";
             this.pnlOutput.ResumeLayout(false);
             this.pnlOutput.PerformLayout();
+            this.pnlInput.ResumeLayout(false);
+            this.pnlInput.PerformLayout();
+            this.pnlAutomatic.ResumeLayout(false);
             this.pnlManual.ResumeLayout(false);
             this.pnlManual.PerformLayout();
             this.ResumeLayout(false);
@@ -584,49 +600,49 @@
 
         #endregion
 
-        private Panel pnlAutomatic;
-        private Panel pnlInput;
-        private Label lblY;
-        private Label lblPrime;
-        private Label lblPrivateKey;
-        private Label lblP;
-        private TextBox txtPublicY;
-        private TextBox txtPublicG;
-        private TextBox txtPrivateKey;
-        private Button btnPrivateKey;
-        private TextBox txtPublicP;
-        private Button btnPublicP;
-        private Label lblDigest;
-        private TextBox txtOutput;
-        private Label lblSignature;
-        private TextBox txtMessageDigest;
-        private Button btnSignature;
-        private Button btnCopy;
-        private Panel pnlOutput;
-        private Button btnInfo;
-        private TextBox txtInput;
-        private Label lblMessage;
-        private Button btnSign;
-        private Panel pnlManual;
-        private Label lblMY;
-        private Label lblMG;
-        private Label lblMPrivateKey;
-        private TextBox txtMMessage;
-        private Label lblMPublicKey;
-        private Button btnMSign;
-        private TextBox txtPublicMY;
-        private TextBox txtPublicMG;
-        private TextBox txtMPrivateKey;
-        private Label lblMMessage;
-        private Label lblMMessageHash;
-        private TextBox txtPublicMP;
-        private TextBox txtMSignature;
-        private Button btnMSignatureCopy;
-        private TextBox txtMMessageHash;
-        private Label lblMSignature;
-        private Button btnMHashCopy;
-        private RadioButton rbManual;
-        private RadioButton rbAuto;
-        private Label lblType;
+        private System.Windows.Forms.TextBox txtInput;
+        private System.Windows.Forms.TextBox txtOutput;
+        private System.Windows.Forms.Label lblMessage;
+        private System.Windows.Forms.Button btnSign;
+        private System.Windows.Forms.Label lblSignature;
+        private System.Windows.Forms.Label lblDigest;
+        private System.Windows.Forms.TextBox txtMessageDigest;
+        private System.Windows.Forms.Button btnCopy;
+        private System.Windows.Forms.Panel pnlOutput;
+        private System.Windows.Forms.Panel pnlInput;
+        private System.Windows.Forms.Button btnInfo;
+        private System.Windows.Forms.Label lblPrivateKey;
+        private System.Windows.Forms.Label lblP;
+        private System.Windows.Forms.TextBox txtPrivateKey;
+        private System.Windows.Forms.Button btnPrivateKey;
+        private System.Windows.Forms.TextBox txtPublicP;
+        private System.Windows.Forms.Button btnPublicP;
+        private System.Windows.Forms.Button btnSignature;
+        private System.Windows.Forms.Label lblType;
+        private System.Windows.Forms.RadioButton rbAuto;
+        private System.Windows.Forms.RadioButton rbManual;
+        private System.Windows.Forms.Panel pnlAutomatic;
+        private System.Windows.Forms.Panel pnlManual;
+        private System.Windows.Forms.Label lblMPrivateKey;
+        private System.Windows.Forms.TextBox txtMMessage;
+        private System.Windows.Forms.Label lblMPublicKey;
+        private System.Windows.Forms.Button btnMSign;
+        private System.Windows.Forms.TextBox txtMPrivateKey;
+        private System.Windows.Forms.Label lblMMessage;
+        private System.Windows.Forms.Label lblMMessageHash;
+        private System.Windows.Forms.TextBox txtPublicMP;
+        private System.Windows.Forms.TextBox txtMSignature;
+        private System.Windows.Forms.Button btnMSignatureCopy;
+        private System.Windows.Forms.TextBox txtMMessageHash;
+        private System.Windows.Forms.Label lblMSignature;
+        private System.Windows.Forms.Button btnMHashCopy;
+        private System.Windows.Forms.Label lblPrime;
+        private System.Windows.Forms.TextBox txtPublicG;
+        private System.Windows.Forms.Label lblMG;
+        private System.Windows.Forms.TextBox txtPublicMG;
+        private System.Windows.Forms.Label lblY;
+        private System.Windows.Forms.TextBox txtPublicY;
+        private System.Windows.Forms.Label lblMY;
+        private System.Windows.Forms.TextBox txtPublicMY;
     }
 }
