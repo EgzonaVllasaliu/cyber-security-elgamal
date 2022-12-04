@@ -1588,5 +1588,244 @@ namespace ElgamalEncryption.Algorithm.misc
 
             return r1;
         }
+
+        /// <summary>
+        /// Returns gcd(this, bi)
+        /// </summary>
+        /// <param name="bi"></param>
+        /// <returns>Greatest Common Divisor of this and bi</returns>
+        public BigInteger gcd(BigInteger bi)
+        {
+            BigInteger x;
+            BigInteger y;
+
+            if ((data[maxLength - 1] & 0x80000000) != 0)     // negative
+                x = -this;
+            else
+                x = this;
+
+            if ((bi.data[maxLength - 1] & 0x80000000) != 0)     // negative
+                y = -bi;
+            else
+                y = bi;
+
+            BigInteger g = y;
+
+            while (x.dataLength > 1 || x.dataLength == 1 && x.data[0] != 0)
+            {
+                g = x;
+                x = y % x;
+                y = g;
+            }
+
+            return g;
+        }
+
+
+        /// <summary>
+        /// Populates "this" with the specified amount of random bits
+        /// </summary>
+        /// <param name="bits"></param>
+        /// <param name="rand"></param>
+        public void genRandomBits(int bits, Random rand)
+        {
+            int dwords = bits >> 5;
+            int remBits = bits & 0x1F;
+
+            if (remBits != 0)
+                dwords++;
+
+            if (dwords > maxLength || bits <= 0)
+                throw new ArithmeticException("Number of required bits is not valid.");
+
+            byte[] randBytes = new byte[dwords * 4];
+            rand.NextBytes(randBytes);
+
+            for (int i = 0; i < dwords; i++)
+                data[i] = BitConverter.ToUInt32(randBytes, i * 4);
+
+            for (int i = dwords; i < maxLength; i++)
+                data[i] = 0;
+
+            if (remBits != 0)
+            {
+                uint mask;
+
+                if (bits != 1)
+                {
+                    mask = (uint)(0x01 << remBits - 1);
+                    data[dwords - 1] |= mask;
+                }
+
+                mask = 0xFFFFFFFF >> 32 - remBits;
+                data[dwords - 1] &= mask;
+            }
+            else
+                data[dwords - 1] |= 0x80000000;
+
+            dataLength = dwords;
+
+            if (dataLength == 0)
+                dataLength = 1;
+        }
+
+
+        /// <summary>
+        /// Populates "this" with the specified amount of random bits (secured version)
+        /// </summary>
+        /// <param name="bits"></param>
+        /// <param name="rng"></param>
+        public void genRandomBits(int bits, RNGCryptoServiceProvider rng)
+        {
+            int dwords = bits >> 5;
+            int remBits = bits & 0x1F;
+
+            if (remBits != 0)
+                dwords++;
+
+            if (dwords > maxLength || bits <= 0)
+                throw new ArithmeticException("Number of required bits is not valid.");
+
+            byte[] randomBytes = new byte[dwords * 4];
+            rng.GetBytes(randomBytes);
+
+            for (int i = 0; i < dwords; i++)
+                data[i] = BitConverter.ToUInt32(randomBytes, i * 4);
+
+            for (int i = dwords; i < maxLength; i++)
+                data[i] = 0;
+
+            if (remBits != 0)
+            {
+                uint mask;
+
+                if (bits != 1)
+                {
+                    mask = (uint)(0x01 << remBits - 1);
+                    data[dwords - 1] |= mask;
+                }
+
+                mask = 0xFFFFFFFF >> 32 - remBits;
+                data[dwords - 1] &= mask;
+            }
+            else
+                data[dwords - 1] |= 0x80000000;
+
+            dataLength = dwords;
+
+            if (dataLength == 0)
+                dataLength = 1;
+        }
+
+
+        /// <summary>
+        /// Returns the position of the most significant bit in the BigInteger
+        /// </summary>
+        /// <example>
+        /// 1) The result is 1, if the value of BigInteger is 0...0000 0000
+        /// 2) The result is 1, if the value of BigInteger is 0...0000 0001
+        /// 3) The result is 2, if the value of BigInteger is 0...0000 0010
+        /// 4) The result is 2, if the value of BigInteger is 0...0000 0011
+        /// 5) The result is 5, if the value of BigInteger is 0...0001 0011
+        /// </example>
+        /// <returns></returns>
+        public int bitCount()
+        {
+            while (dataLength > 1 && data[dataLength - 1] == 0)
+                dataLength--;
+
+            uint value = data[dataLength - 1];
+            uint mask = 0x80000000;
+            int bits = 32;
+
+            while (bits > 0 && (value & mask) == 0)
+            {
+                bits--;
+                mask >>= 1;
+            }
+            bits += dataLength - 1 << 5;
+
+            return bits == 0 ? 1 : bits;
+        }
+
+
+        /// <summary>
+        /// Probabilistic prime test based on Fermat's little theorem
+        /// </summary>
+        /// <remarks>
+        /// for any a &lt; p (p does not divide a) if
+        ///      a^(p-1) mod p != 1 then p is not prime.
+        ///
+        /// Otherwise, p is probably prime (pseudoprime to the chosen base).
+        /// 
+        /// This method is fast but fails for Carmichael numbers when the randomly chosen base is a factor of the number.
+        /// </remarks>
+        /// <param name="confidence">Number of chosen bases</param>
+        /// <returns>True if this is a pseudoprime to randomly chosen bases</returns>
+        public bool FermatLittleTest(int confidence)
+        {
+            BigInteger thisVal;
+            if ((data[maxLength - 1] & 0x80000000) != 0)        // negative
+                thisVal = -this;
+            else
+                thisVal = this;
+
+            if (thisVal.dataLength == 1)
+            {
+                // test small numbers
+                if (thisVal.data[0] == 0 || thisVal.data[0] == 1)
+                    return false;
+                else if (thisVal.data[0] == 2 || thisVal.data[0] == 3)
+                    return true;
+            }
+
+            if ((thisVal.data[0] & 0x1) == 0)     // even numbers
+                return false;
+
+            int bits = thisVal.bitCount();
+            BigInteger a = new BigInteger();
+            BigInteger p_sub1 = thisVal - new BigInteger(1);
+            Random rand = new Random();
+
+            for (int round = 0; round < confidence; round++)
+            {
+                bool done = false;
+
+                while (!done)       // generate a < n
+                {
+                    int testBits = 0;
+
+                    // make sure "a" has at least 2 bits
+                    while (testBits < 2)
+                        testBits = (int)(rand.NextDouble() * bits);
+
+                    a.genRandomBits(testBits, rand);
+
+                    int byteLen = a.dataLength;
+
+                    // make sure "a" is not 0
+                    if (byteLen > 1 || byteLen == 1 && a.data[0] != 1)
+                        done = true;
+                }
+
+                // check whether a factor exists (fix for version 1.03)
+                BigInteger gcdTest = a.gcd(thisVal);
+                if (gcdTest.dataLength == 1 && gcdTest.data[0] != 1)
+                    return false;
+
+                // calculate a^(p-1) mod p
+                BigInteger expResult = a.modPow(p_sub1, thisVal);
+
+                int resultLen = expResult.dataLength;
+
+                // is NOT prime is a^(p-1) mod p != 1
+
+                if (resultLen > 1 || resultLen == 1 && expResult.data[0] != 1)
+                    return false;
+            }
+
+            return true;
+        }
+
     }
 }
