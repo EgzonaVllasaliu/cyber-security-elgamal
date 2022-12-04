@@ -1828,4 +1828,1089 @@ namespace ElgamalEncryption.Algorithm.misc
         }
 
     }
+
+
+        /// <summary>
+        /// Probabilistic prime test based on Rabin-Miller's
+        /// </summary>
+        /// <remarks>
+        /// for any p &gt; 0 with p - 1 = 2^s * t
+        ///
+        /// p is probably prime (strong pseudoprime) if for any a &lt; p,
+        /// 1) a^t mod p = 1 or
+        /// 2) a^((2^j)*t) mod p = p-1 for some 0 &lt;= j &lt;= s-1
+        ///
+        /// Otherwise, p is composite.
+        /// </remarks>
+        /// <param name="confidence">Number of chosen bases</param>
+        /// <returns>True if this is a strong pseudoprime to randomly chosen bases</returns>
+        public bool RabinMillerTest(int confidence)
+        {
+            BigInteger thisVal;
+            if ((data[maxLength - 1] & 0x80000000) != 0)        // negative
+                thisVal = -this;
+            else
+                thisVal = this;
+
+            if (thisVal.dataLength == 1)
+            {
+                // test small numbers
+                if (thisVal.data[0] == 0 || thisVal.data[0] == 1)
+                    return false;
+                else if (thisVal.data[0] == 2 || thisVal.data[0] == 3)
+                    return true;
+            }
+
+            if ((thisVal.data[0] & 0x1) == 0)     // even numbers
+                return false;
+
+
+            // calculate values of s and t
+            BigInteger p_sub1 = thisVal - new BigInteger(1);
+            int s = 0;
+
+            for (int index = 0; index < p_sub1.dataLength; index++)
+            {
+                uint mask = 0x01;
+
+                for (int i = 0; i < 32; i++)
+                {
+                    if ((p_sub1.data[index] & mask) != 0)
+                    {
+                        index = p_sub1.dataLength;      // to break the outer loop
+                        break;
+                    }
+                    mask <<= 1;
+                    s++;
+                }
+            }
+
+            BigInteger t = p_sub1 >> s;
+
+            int bits = thisVal.bitCount();
+            BigInteger a = new BigInteger();
+            Random rand = new Random();
+
+            for (int round = 0; round < confidence; round++)
+            {
+                bool done = false;
+
+                while (!done)       // generate a < n
+                {
+                    int testBits = 0;
+
+                    // make sure "a" has at least 2 bits
+                    while (testBits < 2)
+                        testBits = (int)(rand.NextDouble() * bits);
+
+                    a.genRandomBits(testBits, rand);
+
+                    int byteLen = a.dataLength;
+
+                    // make sure "a" is not 0
+                    if (byteLen > 1 || byteLen == 1 && a.data[0] != 1)
+                        done = true;
+                }
+
+                // check whether a factor exists (fix for version 1.03)
+                BigInteger gcdTest = a.gcd(thisVal);
+                if (gcdTest.dataLength == 1 && gcdTest.data[0] != 1)
+                    return false;
+
+                BigInteger b = a.modPow(t, thisVal);
+
+                bool result = false;
+
+                if (b.dataLength == 1 && b.data[0] == 1)         // a^t mod p = 1
+                    result = true;
+
+                for (int j = 0; result == false && j < s; j++)
+                {
+                    if (b == p_sub1)         // a^((2^j)*t) mod p = p-1 for some 0 <= j <= s-1
+                    {
+                        result = true;
+                        break;
+                    }
+
+                    b = b * b % thisVal;
+                }
+
+                if (result == false)
+                    return false;
+            }
+            return true;
+        }
+
+
+        /// <summary>
+        /// Probabilistic prime test based on Solovay-Strassen (Euler Criterion)
+        /// </summary>
+        /// <remarks>
+        ///  p is probably prime if for any a &lt; p (a is not multiple of p),
+        /// a^((p-1)/2) mod p = J(a, p)
+        ///
+        /// where J is the Jacobi symbol.
+        ///
+        /// Otherwise, p is composite.
+        /// </remarks>
+        /// <param name="confidence">Number of chosen bases</param>
+        /// <returns>True if this is a Euler pseudoprime to randomly chosen bases</returns>
+        public bool SolovayStrassenTest(int confidence)
+        {
+            BigInteger thisVal;
+            if ((data[maxLength - 1] & 0x80000000) != 0)        // negative
+                thisVal = -this;
+            else
+                thisVal = this;
+
+            if (thisVal.dataLength == 1)
+            {
+                // test small numbers
+                if (thisVal.data[0] == 0 || thisVal.data[0] == 1)
+                    return false;
+                else if (thisVal.data[0] == 2 || thisVal.data[0] == 3)
+                    return true;
+            }
+
+            if ((thisVal.data[0] & 0x1) == 0)     // even numbers
+                return false;
+
+
+            int bits = thisVal.bitCount();
+            BigInteger a = new BigInteger();
+            BigInteger p_sub1 = thisVal - 1;
+            BigInteger p_sub1_shift = p_sub1 >> 1;
+
+            Random rand = new Random();
+
+            for (int round = 0; round < confidence; round++)
+            {
+                bool done = false;
+
+                while (!done)       // generate a < n
+                {
+                    int testBits = 0;
+
+                    // make sure "a" has at least 2 bits
+                    while (testBits < 2)
+                        testBits = (int)(rand.NextDouble() * bits);
+
+                    a.genRandomBits(testBits, rand);
+
+                    int byteLen = a.dataLength;
+
+                    // make sure "a" is not 0
+                    if (byteLen > 1 || byteLen == 1 && a.data[0] != 1)
+                        done = true;
+                }
+
+                // check whether a factor exists (fix for version 1.03)
+                BigInteger gcdTest = a.gcd(thisVal);
+                if (gcdTest.dataLength == 1 && gcdTest.data[0] != 1)
+                    return false;
+
+                // calculate a^((p-1)/2) mod p
+
+                BigInteger expResult = a.modPow(p_sub1_shift, thisVal);
+                if (expResult == p_sub1)
+                    expResult = -1;
+
+                // calculate Jacobi symbol
+                BigInteger jacob = Jacobi(a, thisVal);
+
+                // if they are different then it is not prime
+                if (expResult != jacob)
+                    return false;
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// Implementation of the Lucas Strong Pseudo Prime test
+        /// </summary>
+        /// <remarks>
+        /// Let n be an odd number with gcd(n,D) = 1, and n - J(D, n) = 2^s * d
+        /// with d odd and s >= 0.
+        ///
+        /// If Ud mod n = 0 or V2^r*d mod n = 0 for some 0 &lt;= r &lt; s, then n
+        /// is a strong Lucas pseudoprime with parameters (P, Q).  We select
+        /// P and Q based on Selfridge.
+        /// </remarks>
+        /// <returns>True if number is a strong Lucus pseudo prime</returns>
+        public bool LucasStrongTest()
+        {
+            BigInteger thisVal;
+            if ((data[maxLength - 1] & 0x80000000) != 0)        // negative
+                thisVal = -this;
+            else
+                thisVal = this;
+
+            if (thisVal.dataLength == 1)
+            {
+                // test small numbers
+                if (thisVal.data[0] == 0 || thisVal.data[0] == 1)
+                    return false;
+                else if (thisVal.data[0] == 2 || thisVal.data[0] == 3)
+                    return true;
+            }
+
+            if ((thisVal.data[0] & 0x1) == 0)     // even numbers
+                return false;
+
+            return LucasStrongTestHelper(thisVal);
+        }
+
+
+        private bool LucasStrongTestHelper(BigInteger thisVal)
+        {
+            // Do the test (selects D based on Selfridge)
+            // Let D be the first element of the sequence
+            // 5, -7, 9, -11, 13, ... for which J(D,n) = -1
+            // Let P = 1, Q = (1-D) / 4
+
+            long D = 5, sign = -1, dCount = 0;
+            bool done = false;
+
+            while (!done)
+            {
+                int Jresult = Jacobi(D, thisVal);
+
+                if (Jresult == -1)
+                    done = true;    // J(D, this) = 1
+                else
+                {
+                    if (Jresult == 0 && Math.Abs(D) < thisVal)       // divisor found
+                        return false;
+
+                    if (dCount == 20)
+                    {
+                        // check for square
+                        BigInteger root = thisVal.sqrt();
+                        if (root * root == thisVal)
+                            return false;
+                    }
+
+                    D = (Math.Abs(D) + 2) * sign;
+                    sign = -sign;
+                }
+                dCount++;
+            }
+
+            long Q = 1 - D >> 2;
+
+            BigInteger p_add1 = thisVal + 1;
+            int s = 0;
+
+            for (int index = 0; index < p_add1.dataLength; index++)
+            {
+                uint mask = 0x01;
+
+                for (int i = 0; i < 32; i++)
+                {
+                    if ((p_add1.data[index] & mask) != 0)
+                    {
+                        index = p_add1.dataLength;      // to break the outer loop
+                        break;
+                    }
+                    mask <<= 1;
+                    s++;
+                }
+            }
+
+            BigInteger t = p_add1 >> s;
+
+            // calculate constant = b^(2k) / m
+            // for Barrett Reduction
+            BigInteger constant = new BigInteger();
+
+            int nLen = thisVal.dataLength << 1;
+            constant.data[nLen] = 0x00000001;
+            constant.dataLength = nLen + 1;
+
+            constant = constant / thisVal;
+
+            BigInteger[] lucas = LucasSequenceHelper(1, Q, t, thisVal, constant, 0);
+            bool isPrime = false;
+
+            if (lucas[0].dataLength == 1 && lucas[0].data[0] == 0 ||
+               lucas[1].dataLength == 1 && lucas[1].data[0] == 0)
+            {
+                // u(t) = 0 or V(t) = 0
+                isPrime = true;
+            }
+
+            for (int i = 1; i < s; i++)
+            {
+                if (!isPrime)
+                {
+                    // doubling of index
+                    lucas[1] = thisVal.BarrettReduction(lucas[1] * lucas[1], thisVal, constant);
+                    lucas[1] = (lucas[1] - (lucas[2] << 1)) % thisVal;
+
+                    if (lucas[1].dataLength == 1 && lucas[1].data[0] == 0)
+                        isPrime = true;
+                }
+
+                lucas[2] = thisVal.BarrettReduction(lucas[2] * lucas[2], thisVal, constant);     //Q^k
+            }
+
+
+            if (isPrime)     // additional checks for composite numbers
+            {
+                // If n is prime and gcd(n, Q) == 1, then
+                // Q^((n+1)/2) = Q * Q^((n-1)/2) is congruent to (Q * J(Q, n)) mod n
+
+                BigInteger g = thisVal.gcd(Q);
+                if (g.dataLength == 1 && g.data[0] == 1)         // gcd(this, Q) == 1
+                {
+                    if ((lucas[2].data[maxLength - 1] & 0x80000000) != 0)
+                        lucas[2] += thisVal;
+
+                    BigInteger temp = Q * Jacobi(Q, thisVal) % thisVal;
+                    if ((temp.data[maxLength - 1] & 0x80000000) != 0)
+                        temp += thisVal;
+
+                    if (lucas[2] != temp)
+                        isPrime = false;
+                }
+            }
+
+            return isPrime;
+        }
+
+
+        /// <summary>
+        /// Determines whether a number is probably prime using the Rabin-Miller's test
+        /// </summary>
+        /// <remarks>
+        /// Before applying the test, the number is tested for divisibility by primes &lt; 2000
+        /// </remarks>
+        /// <param name="confidence">Number of chosen bases</param>
+        /// <returns>True if this is probably prime</returns>
+        public bool isProbablePrime(int confidence)
+        {
+            BigInteger thisVal;
+            if ((data[maxLength - 1] & 0x80000000) != 0)        // negative
+                thisVal = -this;
+            else
+                thisVal = this;
+
+            // test for divisibility by primes < 2000
+            for (int p = 0; p < primesBelow2000.Length; p++)
+            {
+                BigInteger divisor = primesBelow2000[p];
+
+                if (divisor >= thisVal)
+                    break;
+
+                BigInteger resultNum = thisVal % divisor;
+                if (resultNum.IntValue() == 0)
+                    return false;
+            }
+
+            if (thisVal.RabinMillerTest(confidence))
+                return true;
+            else
+                return false;
+        }
+
+
+        /// <summary>
+        /// Determines whether this BigInteger is probably prime using a combination of base 2 strong pseudoprime test and Lucas strong pseudoprime test 
+        /// </summary>
+        /// <remarks>
+        /// The sequence of the primality test is as follows,
+        ///
+        /// 1) Trial divisions are carried out using prime numbers below 2000.
+        ///    if any of the primes divides this BigInteger, then it is not prime.
+        ///
+        /// 2) Perform base 2 strong pseudoprime test.  If this BigInteger is a
+        ///    base 2 strong pseudoprime, proceed on to the next step.
+        ///
+        /// 3) Perform strong Lucas pseudoprime test.
+        /// 
+        /// For a detailed discussion of this primality test, see [6].
+        /// </remarks>
+        /// <returns>True if this is probably prime</returns>
+        public bool isProbablePrime()
+        {
+            BigInteger thisVal;
+            if ((data[maxLength - 1] & 0x80000000) != 0)        // negative
+                thisVal = -this;
+            else
+                thisVal = this;
+
+            if (thisVal.dataLength == 1)
+            {
+                // test small numbers
+                if (thisVal.data[0] == 0 || thisVal.data[0] == 1)
+                    return false;
+                else if (thisVal.data[0] == 2 || thisVal.data[0] == 3)
+                    return true;
+            }
+
+            if ((thisVal.data[0] & 0x1) == 0)     // even numbers
+                return false;
+
+
+            // test for divisibility by primes < 2000
+            for (int p = 0; p < primesBelow2000.Length; p++)
+            {
+                BigInteger divisor = primesBelow2000[p];
+
+                if (divisor >= thisVal)
+                    break;
+
+                BigInteger resultNum = thisVal % divisor;
+                if (resultNum.IntValue() == 0)
+                    return false;
+            }
+
+            // Perform BASE 2 Rabin-Miller Test
+
+            // calculate values of s and t
+            BigInteger p_sub1 = thisVal - new BigInteger(1);
+            int s = 0;
+
+            for (int index = 0; index < p_sub1.dataLength; index++)
+            {
+                uint mask = 0x01;
+
+                for (int i = 0; i < 32; i++)
+                {
+                    if ((p_sub1.data[index] & mask) != 0)
+                    {
+                        index = p_sub1.dataLength;      // to break the outer loop
+                        break;
+                    }
+                    mask <<= 1;
+                    s++;
+                }
+            }
+
+            BigInteger t = p_sub1 >> s;
+
+            int bits = thisVal.bitCount();
+            BigInteger a = 2;
+
+            // b = a^t mod p
+            BigInteger b = a.modPow(t, thisVal);
+            bool result = false;
+
+            if (b.dataLength == 1 && b.data[0] == 1)         // a^t mod p = 1
+                result = true;
+
+            for (int j = 0; result == false && j < s; j++)
+            {
+                if (b == p_sub1)         // a^((2^j)*t) mod p = p-1 for some 0 <= j <= s-1
+                {
+                    result = true;
+                    break;
+                }
+
+                b = b * b % thisVal;
+            }
+
+            // if number is strong pseudoprime to base 2, then do a strong lucas test
+            if (result)
+                result = LucasStrongTestHelper(thisVal);
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Returns the lowest 4 bytes of the BigInteger as an int
+        /// </summary>
+        /// <returns>Lowest 4 bytes as integer</returns>
+        public int IntValue()
+        {
+            return (int)data[0];
+        }
+
+
+        /// <summary>
+        /// Returns the lowest 8 bytes of the BigInteger as a long
+        /// </summary>
+        /// <returns>Lowest 8 bytes as long</returns>
+        public long LongValue()
+        {
+            long val = 0;
+
+            val = data[0];
+            try
+            {       // exception if maxLength = 1
+                val |= (long)data[1] << 32;
+            }
+            catch (Exception)
+            {
+                if ((data[0] & 0x80000000) != 0) // negative
+                    val = (int)data[0];
+            }
+
+            return val;
+        }
+
+
+        /// <summary>
+        /// Computes the Jacobi Symbol for 2 BigInteger a and b
+        /// </summary>
+        /// <remarks>
+        /// Algorithm adapted from [3] and [4] with some optimizations
+        /// </remarks>
+        /// <param name="a">Any BigInteger</param>
+        /// <param name="b">Odd BigInteger</param>
+        /// <returns>Jacobi Symbol</returns>
+        public static int Jacobi(BigInteger a, BigInteger b)
+        {
+            // Jacobi defined only for odd integers
+            if ((b.data[0] & 0x1) == 0)
+                throw new ArgumentException("Jacobi defined only for odd integers.");
+
+            if (a >= b) a %= b;
+            if (a.dataLength == 1 && a.data[0] == 0) return 0;  // a == 0
+            if (a.dataLength == 1 && a.data[0] == 1) return 1;  // a == 1
+
+            if (a < 0)
+            {
+                if (((b - 1).data[0] & 0x2) == 0)       //if( (((b-1) >> 1).data[0] & 0x1) == 0)
+                    return Jacobi(-a, b);
+                else
+                    return -Jacobi(-a, b);
+            }
+
+            int e = 0;
+            for (int index = 0; index < a.dataLength; index++)
+            {
+                uint mask = 0x01;
+
+                for (int i = 0; i < 32; i++)
+                {
+                    if ((a.data[index] & mask) != 0)
+                    {
+                        index = a.dataLength;      // to break the outer loop
+                        break;
+                    }
+                    mask <<= 1;
+                    e++;
+                }
+            }
+
+            BigInteger a1 = a >> e;
+
+            int s = 1;
+            if ((e & 0x1) != 0 && ((b.data[0] & 0x7) == 3 || (b.data[0] & 0x7) == 5))
+                s = -1;
+
+            if ((b.data[0] & 0x3) == 3 && (a1.data[0] & 0x3) == 3)
+                s = -s;
+
+            if (a1.dataLength == 1 && a1.data[0] == 1)
+                return s;
+            else
+                return s * Jacobi(b % a1, a1);
+        }
+
+
+        /// <summary>
+        /// Generates a positive BigInteger that is probably prime
+        /// </summary>
+        /// <param name="bits">Number of bit</param>
+        /// <param name="confidence">Number of chosen bases</param>
+        /// <param name="rand">Random object</param>
+        /// <returns>A probably prime number</returns>
+        public static BigInteger genPseudoPrime(int bits, int confidence, Random rand)
+        {
+            BigInteger result = new BigInteger();
+            bool done = false;
+
+            while (!done)
+            {
+                result.genRandomBits(bits, rand);
+                result.data[0] |= 0x01;     // make it odd
+
+                // prime test
+                done = result.isProbablePrime(confidence);
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// Generates a positive BigInteger that is probably prime (secured version)
+        /// </summary>
+        /// <param name="bits">Number of bit</param>
+        /// <param name="confidence">Number of chosen bases</param>
+        /// <param name="rand">RNGCryptoServiceProvider object</param>
+        /// <returns>A probably prime number</returns>
+        public static BigInteger genPseudoPrime(int bits, int confidence, RNGCryptoServiceProvider rand)
+        {
+            BigInteger result = new BigInteger();
+            bool done = false;
+
+            while (!done)
+            {
+                result.genRandomBits(bits, rand);
+                result.data[0] |= 0x01;     // make it odd
+
+                // prime test
+                done = result.isProbablePrime(confidence);
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// Generates a random number with the specified number of bits such that gcd(number, this) = 1
+        /// </summary>
+        /// <remarks>
+        /// The number of bits must be greater than 0 and less than 2209
+        /// </remarks>
+        /// <param name="bits">Number of bit</param>
+        /// <param name="rand">Random object</param>
+        /// <returns>Relatively prime number of this</returns>
+        public BigInteger genCoPrime(int bits, Random rand)
+        {
+            bool done = false;
+            BigInteger result = new BigInteger();
+
+            while (!done)
+            {
+                result.genRandomBits(bits, rand);
+
+                // gcd test
+                BigInteger g = result.gcd(this);
+                if (g.dataLength == 1 && g.data[0] == 1)
+                    done = true;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Generates a random number with the specified number of bits such that gcd(number, this) = 1 (secured)
+        /// </summary>
+        /// <param name="bits">Number of bit</param>
+        /// <param name="rand">Random object</param>
+        /// <returns>Relatively prime number of this</returns>
+        public BigInteger genCoPrime(int bits, RNGCryptoServiceProvider rand)
+        {
+            bool done = false;
+            BigInteger result = new BigInteger();
+
+            while (!done)
+            {
+                result.genRandomBits(bits, rand);
+
+                // gcd test
+                BigInteger g = result.gcd(this);
+                if (g.dataLength == 1 && g.data[0] == 1)
+                    done = true;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Returns the modulo inverse of this
+        /// </summary>
+        /// <remarks>
+        /// Throws ArithmeticException if the inverse does not exist.  (i.e. gcd(this, modulus) != 1)
+        /// </remarks>
+        /// <param name="modulus"></param>
+        /// <returns>Modulo inverse of this</returns>
+        public BigInteger modInverse(BigInteger modulus)
+        {
+            BigInteger[] p = { 0, 1 };
+            BigInteger[] q = new BigInteger[2];    // quotients
+            BigInteger[] r = { 0, 0 };             // remainders
+
+            int step = 0;
+
+            BigInteger a = modulus;
+            BigInteger b = this;
+
+            while (b.dataLength > 1 || b.dataLength == 1 && b.data[0] != 0)
+            {
+                BigInteger quotient = new BigInteger();
+                BigInteger remainder = new BigInteger();
+
+                if (step > 1)
+                {
+                    BigInteger pval = (p[0] - p[1] * q[0]) % modulus;
+                    p[0] = p[1];
+                    p[1] = pval;
+                }
+
+                if (b.dataLength == 1)
+                    singleByteDivide(a, b, quotient, remainder);
+                else
+                    multiByteDivide(a, b, quotient, remainder);
+
+                q[0] = q[1];
+                r[0] = r[1];
+                q[1] = quotient; r[1] = remainder;
+
+                a = b;
+                b = remainder;
+
+                step++;
+            }
+            if (r[0].dataLength > 1 || r[0].dataLength == 1 && r[0].data[0] != 1)
+                throw new ArithmeticException("No inverse!");
+
+            BigInteger result = (p[0] - p[1] * q[0]) % modulus;
+
+            if ((result.data[maxLength - 1] & 0x80000000) != 0)
+                result += modulus;  // get the least positive modulus
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Returns the value of the BigInteger as a byte array
+        /// </summary>
+        /// <remarks>
+        /// The lowest index contains the MSB
+        /// </remarks>
+        /// <returns>Byte array containing value of the BigInteger</returns>
+        public byte[] getBytes()
+        {
+            int numBits = bitCount();
+
+            int numBytes = numBits >> 3;
+            if ((numBits & 0x7) != 0)
+                numBytes++;
+
+            byte[] result = new byte[numBytes];
+
+            int pos = 0;
+            uint tempVal, val = data[dataLength - 1];
+
+
+            if ((tempVal = val >> 24 & 0xFF) != 0)
+                result[pos++] = (byte)tempVal;
+
+            if ((tempVal = val >> 16 & 0xFF) != 0)
+                result[pos++] = (byte)tempVal;
+            else if (pos > 0)
+                pos++;
+
+            if ((tempVal = val >> 8 & 0xFF) != 0)
+                result[pos++] = (byte)tempVal;
+            else if (pos > 0)
+                pos++;
+
+            if ((tempVal = val & 0xFF) != 0)
+                result[pos++] = (byte)tempVal;
+            else if (pos > 0)
+                pos++;
+
+
+            for (int i = dataLength - 2; i >= 0; i--, pos += 4)
+            {
+                val = data[i];
+                result[pos + 3] = (byte)(val & 0xFF);
+                val >>= 8;
+                result[pos + 2] = (byte)(val & 0xFF);
+                val >>= 8;
+                result[pos + 1] = (byte)(val & 0xFF);
+                val >>= 8;
+                result[pos] = (byte)(val & 0xFF);
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Sets the value of the specified bit to 1
+        /// </summary>
+        /// <remarks>
+        /// The Least Significant Bit position is 0
+        /// </remarks>
+        /// <param name="bitNum">The position of bit to be changed</param>
+        public void setBit(uint bitNum)
+        {
+            uint bytePos = bitNum >> 5;             // divide by 32
+            byte bitPos = (byte)(bitNum & 0x1F);    // get the lowest 5 bits
+
+            uint mask = (uint)1 << bitPos;
+            data[bytePos] |= mask;
+
+            if (bytePos >= dataLength)
+                dataLength = (int)bytePos + 1;
+        }
+
+
+        /// <summary>
+        /// Sets the value of the specified bit to 0
+        /// </summary>
+        /// <remarks>
+        /// The Least Significant Bit position is 0
+        /// </remarks>
+        /// <param name="bitNum">The position of bit to be changed</param>
+        public void unsetBit(uint bitNum)
+        {
+            uint bytePos = bitNum >> 5;
+
+            if (bytePos < dataLength)
+            {
+                byte bitPos = (byte)(bitNum & 0x1F);
+
+                uint mask = (uint)1 << bitPos;
+                uint mask2 = 0xFFFFFFFF ^ mask;
+
+                data[bytePos] &= mask2;
+
+                if (dataLength > 1 && data[dataLength - 1] == 0)
+                    dataLength--;
+            }
+        }
+
+
+        /// <summary>
+        /// Returns a value that is equivalent to the integer square root of this
+        /// </summary>
+        /// <remarks>
+        /// The integer square root of "this" is defined as the largest integer n, such that (n * n) &lt;= this.
+        /// Square root of negative integer is an undefined behaviour (UB).
+        /// </remarks>
+        /// <returns>Integer square root of this</returns>
+        public BigInteger sqrt()
+        {
+            uint numBits = (uint)bitCount();
+
+            if ((numBits & 0x1) != 0)        // odd number of bits
+                numBits = (numBits >> 1) + 1;
+            else
+                numBits = numBits >> 1;
+
+            uint bytePos = numBits >> 5;
+            byte bitPos = (byte)(numBits & 0x1F);
+
+            uint mask;
+
+            BigInteger result = new BigInteger();
+            if (bitPos == 0)
+                mask = 0x80000000;
+            else
+            {
+                mask = (uint)1 << bitPos;
+                bytePos++;
+            }
+            result.dataLength = (int)bytePos;
+
+            for (int i = (int)bytePos - 1; i >= 0; i--)
+            {
+                while (mask != 0)
+                {
+                    // guess
+                    result.data[i] ^= mask;
+
+                    // undo the guess if its square is larger than this
+                    if (result * result > this)
+                        result.data[i] ^= mask;
+
+                    mask >>= 1;
+                }
+                mask = 0x80000000;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// Returns the k_th number in the Lucas Sequence reduced modulo n
+        /// </summary>
+        /// <remarks>
+        /// Uses index doubling to speed up the process.  For example, to calculate V(k),
+        /// we maintain two numbers in the sequence V(n) and V(n+1).
+        ///
+        /// To obtain V(2n), we use the identity
+        ///      V(2n) = (V(n) * V(n)) - (2 * Q^n)
+        /// To obtain V(2n+1), we first write it as
+        ///      V(2n+1) = V((n+1) + n)
+        /// and use the identity
+        ///      V(m+n) = V(m) * V(n) - Q * V(m-n)
+        /// Hence,
+        ///      V((n+1) + n) = V(n+1) * V(n) - Q^n * V((n+1) - n)
+        ///                   = V(n+1) * V(n) - Q^n * V(1)
+        ///                   = V(n+1) * V(n) - Q^n * P
+        ///
+        /// We use k in its binary expansion and perform index doubling for each
+        /// bit position.  For each bit position that is set, we perform an
+        /// index doubling followed by an index addition.  This means that for V(n),
+        /// we need to update it to V(2n+1).  For V(n+1), we need to update it to
+        /// V((2n+1)+1) = V(2*(n+1))
+        ///
+        /// This function returns
+        /// [0] = U(k)
+        /// [1] = V(k)
+        /// [2] = Q^n
+        ///
+        /// Where U(0) = 0 % n, U(1) = 1 % n
+        ///       V(0) = 2 % n, V(1) = P % n
+        /// </remarks>
+        /// <param name="P"></param>
+        /// <param name="Q"></param>
+        /// <param name="k"></param>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static BigInteger[] LucasSequence(BigInteger P, BigInteger Q,
+                                                 BigInteger k, BigInteger n)
+        {
+            if (k.dataLength == 1 && k.data[0] == 0)
+            {
+                BigInteger[] result = new BigInteger[3];
+
+                result[0] = 0; result[1] = 2 % n; result[2] = 1 % n;
+                return result;
+            }
+
+            // calculate constant = b^(2k) / m
+            // for Barrett Reduction
+            BigInteger constant = new BigInteger();
+
+            int nLen = n.dataLength << 1;
+            constant.data[nLen] = 0x00000001;
+            constant.dataLength = nLen + 1;
+
+            constant = constant / n;
+
+            // calculate values of s and t
+            int s = 0;
+
+            for (int index = 0; index < k.dataLength; index++)
+            {
+                uint mask = 0x01;
+
+                for (int i = 0; i < 32; i++)
+                {
+                    if ((k.data[index] & mask) != 0)
+                    {
+                        index = k.dataLength;      // to break the outer loop
+                        break;
+                    }
+                    mask <<= 1;
+                    s++;
+                }
+            }
+
+            BigInteger t = k >> s;
+
+            return LucasSequenceHelper(P, Q, t, n, constant, s);
+        }
+
+
+        //***********************************************************************
+        // Performs the calculation of the kth term in the Lucas Sequence.
+        // For details of the algorithm, see reference [9].
+        //
+        // k must be odd.  i.e LSB == 1
+        //***********************************************************************
+        private static BigInteger[] LucasSequenceHelper(BigInteger P, BigInteger Q,
+                                                        BigInteger k, BigInteger n,
+                                                        BigInteger constant, int s)
+        {
+            BigInteger[] result = new BigInteger[3];
+
+            if ((k.data[0] & 0x00000001) == 0)
+                throw new ArgumentException("Argument k must be odd.");
+
+            int numbits = k.bitCount();
+            uint mask = (uint)0x1 << (numbits & 0x1F) - 1;
+
+            // v = v0, v1 = v1, u1 = u1, Q_k = Q^0
+
+            BigInteger v = 2 % n, Q_k = 1 % n,
+                       v1 = P % n, u1 = Q_k;
+            bool flag = true;
+
+            for (int i = k.dataLength - 1; i >= 0; i--)     // iterate on the binary expansion of k
+            {
+                while (mask != 0)
+                {
+                    if (i == 0 && mask == 0x00000001)        // last bit
+                        break;
+
+                    if ((k.data[i] & mask) != 0)             // bit is set
+                    {
+                        // index doubling with addition
+
+                        u1 = u1 * v1 % n;
+
+                        v = (v * v1 - P * Q_k) % n;
+                        v1 = n.BarrettReduction(v1 * v1, n, constant);
+                        v1 = (v1 - (Q_k * Q << 1)) % n;
+
+                        if (flag)
+                            flag = false;
+                        else
+                            Q_k = n.BarrettReduction(Q_k * Q_k, n, constant);
+
+                        Q_k = Q_k * Q % n;
+                    }
+                    else
+                    {
+                        // index doubling
+                        u1 = (u1 * v - Q_k) % n;
+
+                        v1 = (v * v1 - P * Q_k) % n;
+                        v = n.BarrettReduction(v * v, n, constant);
+                        v = (v - (Q_k << 1)) % n;
+
+                        if (flag)
+                        {
+                            Q_k = Q % n;
+                            flag = false;
+                        }
+                        else
+                            Q_k = n.BarrettReduction(Q_k * Q_k, n, constant);
+                    }
+
+                    mask >>= 1;
+                }
+                mask = 0x80000000;
+            }
+
+            // at this point u1 = u(n+1) and v = v(n)
+            // since the last bit always 1, we need to transform u1 to u(2n+1) and v to v(2n+1)
+
+            u1 = (u1 * v - Q_k) % n;
+            v = (v * v1 - P * Q_k) % n;
+            if (flag)
+                flag = false;
+            else
+                Q_k = n.BarrettReduction(Q_k * Q_k, n, constant);
+
+            Q_k = Q_k * Q % n;
+
+
+            for (int i = 0; i < s; i++)
+            {
+                // index doubling
+                u1 = u1 * v % n;
+                v = (v * v - (Q_k << 1)) % n;
+
+                if (flag)
+                {
+                    Q_k = Q % n;
+                    flag = false;
+                }
+                else
+                    Q_k = n.BarrettReduction(Q_k * Q_k, n, constant);
+            }
+
+            result[0] = u1;
+            result[1] = v;
+            result[2] = Q_k;
+
+            return result;
+        }
 }
